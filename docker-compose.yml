@@ -17,8 +17,8 @@ services:
 
     # UDP ports required for Bedrock Edition
     ports:
-      - "19132:19132/udp"
-      - "19133:19133/udp"
+      - "8888:19132/udp" # (Changed from 19132:19132)
+      - "19133:19133/udp" # Standard IPv6 entry
 
     # Volume for worlds (persistent data), bind mounts for optional configs (mutable data)
     volumes:

@@ -75,7 +75,7 @@ docker compose up -d mc-server
 ```
 If everything worked correctly, the server should be running.  
 Players can join by adding the **server name** and **IP address** in Minecraft's "Server" section.
-The port is the default minecraft port (`19132`).
+The port used for this project is the `8888`.
 
 ![Screehshot_mobile_iOS](./screenshots/Screenshot_01.PNG)
 
