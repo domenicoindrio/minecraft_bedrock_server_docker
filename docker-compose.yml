@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  mc-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Use an arg from the .env file at build time
+        BEDROCK_VERSION: ${BEDROCK_VERSION}
+    container_name: minecraft-bedrock
+    restart: unless-stopped
+
+    # The .env file will inject all server config values
+    env_file: 
+      - .env
+
+    # UDP ports required for Bedrock Edition
+    ports:
+      - "19132:19132/udp"
+      - "19133:19133/udp"
+
+    # Volume for worlds (persistent data), bind mounts for optional configs (mutable data)
+    volumes:
+      - minecraft_worlds:/bedrock/worlds
+      - ./allowlist.json:/bedrock/allowlist.json
+      - ./permissions.json:/bedrock/permissions.json
+
+      # Optional mounts
+      # - ./behavior_packs:/bedrock/behavior_packs:rw
+      # - ./resource_packs:/bedrock/resource_packs:rw
+
+    # Keeps a pseudo-TTY open and allows interactive input
+    stdin_open: true
+    tty: true
+
+  mc-backup:
+    image: alpine:latest
+    container_name: minecraft_backup
+    volumes:
+      - minecraft_worlds:/bedrock/worlds
+      - ./backup:/backup
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: /backup.sh
+    restart: "no"
+
+  mc-restore:
+    image: alpine:latest
+    container_name: minecraft_restore
+    volumes:
+      - minecraft_worlds:/bedrock/worlds
+      - ./backup:/backup
+      - ./restore.sh:/restore.sh:ro
+    entrypoint: /restore.sh
+    restart: "no"
+
+volumes:
+  minecraft_worlds:
+    name: minecraft_worlds
