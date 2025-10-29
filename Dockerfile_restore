@@ -1,0 +1,9 @@
+FROM alpine:latest
+
+WORKDIR /
+
+# Copy script into the image and make executable
+COPY restore.sh /restore.sh
+RUN chmod +x /restore.sh
+
+ENTRYPOINT ["/restore.sh"]

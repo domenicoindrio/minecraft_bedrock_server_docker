@@ -18,8 +18,7 @@ Client testing was performed using **iOS** and **Android** devices.
     - [.env file](#env-file)
     - [Logs](#logs)
     - [Adding players](#adding-players)
-    - [World Data Backup](#world-data-backup)
-    - [World Data Restore](#world-data-restore)
+    - [World Data Backup and Restore](#world-data-backup-and-restore)
     - [Update and maintenance Docker Cheat Sheet](#update-and-maintenance-docker-cheat-sheet)
     - [Local testing](#local-testing)
     - [Data persistency](#data-persistency)
@@ -30,7 +29,7 @@ Client testing was performed using **iOS** and **Android** devices.
 - This projects revolves around **Minecraft Bedrock Edition**, accessible from Bedrock clients on Windows 10/11, Xbox, PlayStation, Switch, Mobile.
     - Java Editions clients will not work with this server
 
-## Quickstart using Docker
+## Quickstart
 This guide is designed for hosting the server on a **remote machine**. For local hosting, check the [Usage](#usage) section.
 
 ### Prerequisites
@@ -41,7 +40,7 @@ This guide is designed for hosting the server on a **remote machine**. For local
 ---
 ### Connect to the Remote Machine
 ```bash
-ssh user@remote_ip
+ssh <user>@<remote_ip>
 ```
 --- 
 
@@ -57,15 +56,6 @@ The provided template is ready to use, just ensure that the `BEDROCK_VERSION` ma
 
 ```bash
 cp server_config_template.env .env
-nano .env
-```
----
-
-### Make the Backup and Restore scripts executable
-Before starting the server for the first time, ensure the backup and restore scripts have execute permissions.  
-This prevents permission-related warnings or errors during the container build and startup process
-```bash
-chmod +x backup.sh restore.sh 
 ```
 ---
 
@@ -104,7 +94,6 @@ docker compose logs -f mc-server
 ``` 
 Example of the output of a successful server start:
 ```bash
-WARN[0000] /home/user/minecraft_bedrock_server_docker/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
 minecraft-bedrock  | [*] Generating server.properties from environment...
 minecraft-bedrock  | [+] server.properties generated at /bedrock/server.properties
 minecraft-bedrock  | [+] Running bedrock_server...
@@ -134,33 +123,12 @@ minecraft-bedrock  | [2025-10-26 19:14:43:363 INFO] To enable this feature, add 
 minecraft-bedrock  | [2025-10-26 19:14:43:363 INFO] to the server.properties file in the handheld/src-server directory
 minecraft-bedrock  | [2025-10-26 19:14:43:363 INFO] ======================================================
 ```
-> Ignore the **WARN** message, it's harmless and only appears because of the line `version: "3.9"` in the `docker-compose.yml` file.  
-This attribute is deprecated but still backward-compatible.
-
----
-
-### Bind-mounted files
-The files `allowlist.json` and `permissions.json`, even if empty at first, must remain in the project root.
-This ensures Docker can successfully bind-mount them into the container at startup and prevents warning or error messages during initialization.
-
 ---
 
 ### Adding players  
 Since the `allowlist` is set to `true` (recommended to control who can join), players must be added to the `allowlist.json`
 
-This can be done in 2 ways:
-
-1.  **Manually** by editing `allowlist.json` (bind-mounted, so it updates dinamically):
-```json
-[
-    {
-        "ignoresPlayerLimit": false,
-        "name": "Player1"
-    }
-]
-```
-    
-2. Through the minecraft server console:
+This can be done directly through the minecraft server console:
 ```bash
 docker attach minecraft-bedrock
 ```
@@ -168,10 +136,9 @@ Then, inside the console:
 ```bash
 allowlist add Gamertag
 ```
+At the end, detach from the container by pressing **Ctrl-P**, **Ctrl-Q**.
 
-At the end, detach from the container by pressing **Ctrl + P**, **Ctrl + Q**
-
-If those keys are reserved, set a different combination *before* attaching:   
+If those keys are reserved, set a different combination <u>**before**</u> attaching, eg.:   
 ```bash
 docker attach --detach-keys="ctrl-x,ctrl-x" minecraft-bedrock
 ```
@@ -194,11 +161,13 @@ Open `bedrock_server_how_to.html` (located in [`/docs`](./docs/)) in a browser, 
 
 ---
 
-### World Data Backup  
+### World Data Backup and Restore
+#### Backup  
 To backup world data (manually or via cron job), use the `mc-backup` additional service.  
-It spawns a lightweight temporary container that access the main service's world volume and creates a compressed backup in the `/backup` directory.
 
-The logic is handled by `backup.sh`. 
+This spawns a lightweight, temporary container that access the `mc-server`'s world volume, compress its data and safely stores the resulting archive in the dedicated `minecraft_backups` volume.
+
+Build instructions are defined in `Dockerfile_backup`, the logic is handled by `backup.sh`. 
 
 To avoid file corruption, stop the server briefly before backing up:
 ```bash
@@ -216,26 +185,33 @@ docker compose start mc-server
 ```
 Backup file are stored with this format:
 ```bash
-/backup/worlds_2025-10-27_10-06-21.tar.gz
+/backups/worlds_2025-10-27_10-06-21.tar.gz
 ```
 
-### World Data Restore  
-Restoration works similarly, using the `mc-restore` service and the `restore.sh` script.
+#### Restore  
+Restoration works similarly, using the `mc-restore` service.  
+
+Build instructions are defined in `Dockerfile_restore`, the logic is handled by `restore.sh`. 
 
 By default, it restores to the **latest** backup: 
 ```bash
 docker compose stop mc-server
 docker compose run --rm mc-restore
-# restore latest backup
 docker compose start mc-server
 ```
 But you can also specify a particular file:
 ```bash
 docker compose stop mc-server
 docker compose run --rm mc-restore worlds_2025-10-26_03-00-00.tar.gz
-# restore a specific file
 docker compose start mc-server
 ```
+
+> [!TIP] 
+> Since the world data backups are stored in a volume, `minecraft_backups`, the quickest way to list them is running following:
+> ```bash
+> docker run --rm -it -v minecraft_backups:/tmp/myvolume busybox ls -l /tmp/myvolume
+> ```
+
 ---
 
 ### Update and maintenance Docker Cheat Sheet  
@@ -300,8 +276,11 @@ For local hosting/testing change the following `.env` values:
 ---
 
 ### Data persistency 
-The world directory (`/bedrock/worlds`) is stored in a **Docker volume**, ensuring that game data persists across restarts, crashes, or image rebuilds.
+- The world directory (`/bedrock/worlds`) is stored in a **Docker volume**, ensuring that game data persists across restarts, crashes, or image rebuilds.
 
+- Player data containing Gamertags and Permissions (`allowlist.json` and `permissions.json`) is stored in a Docker volume as well, ensuring that known players remain whitelisted across container restarts.
+
+- World backups are stored in a separate Docker volume, `minecraft_backups`. This way host bind-mounts are avoided enforcing a more secure environment.
 
 ## Screenshots
 

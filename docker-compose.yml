@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mc-server:
     build:
@@ -20,13 +18,12 @@ services:
       - "8888:19132/udp" # (Changed from 19132:19132)
       - "19133:19133/udp" # Standard IPv6 entry
 
-    # Volume for worlds (persistent data), bind mounts for optional configs (mutable data)
+    # Volumes for worlds data and player data (allowlist.json and permissions.json)
     volumes:
       - minecraft_worlds:/bedrock/worlds
-      - ./allowlist.json:/bedrock/allowlist.json
-      - ./permissions.json:/bedrock/permissions.json
+      - player_data:/bedrock/player_data
 
-      # Optional mounts
+      # Optional bind-mounts for local testing/expansions pack
       # - ./behavior_packs:/bedrock/behavior_packs:rw
       # - ./resource_packs:/bedrock/resource_packs:rw
 
@@ -35,25 +32,29 @@ services:
     tty: true
 
   mc-backup:
-    image: alpine:latest
+    build:
+      context: .
+      dockerfile: Dockerfile_backup
     container_name: minecraft_backup
     volumes:
       - minecraft_worlds:/bedrock/worlds
-      - ./backup:/backup
-      - ./backup.sh:/backup.sh:ro
-    entrypoint: /backup.sh
+      - minecraft_backups:/backups
     restart: "no"
 
   mc-restore:
-    image: alpine:latest
+    build:
+      context: .
+      dockerfile: Dockerfile_restore
     container_name: minecraft_restore
     volumes:
       - minecraft_worlds:/bedrock/worlds
-      - ./backup:/backup
-      - ./restore.sh:/restore.sh:ro
-    entrypoint: /restore.sh
+      - minecraft_backups:/backups
     restart: "no"
 
 volumes:
   minecraft_worlds:
     name: minecraft_worlds
+  player_data:
+    name: player_data
+  minecraft_backups:
+    name: minecraft_backups

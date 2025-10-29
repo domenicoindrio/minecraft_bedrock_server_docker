@@ -73,8 +73,27 @@ EOF
 
 echo "[+] server.properties generated at $PROPERTIES_FILE"
 
+# ----Symlink logic to mantain player data in a Docker volume----
+# CAVE: Server binary expects allowlist.json and permissions.json to be in /bedrock
+# A volume expects a directory, but mounting /bedrock entirely would be problematic for 
+# changes in .env, server version, etc., 
+# Solution: moving the 2 files in a separate folder (for mounting) and create 2 links in the main /bedrock
+
+# Ensure player_data directory exists
+PLAYER_DATA_DIR="$BEDROCK_DIR/player_data"
+mkdir -p "$PLAYER_DATA_DIR"
+
+# Move files into player_data only if they exist in /bedrock and not already in player_data
+for file in allowlist.json permissions.json; do
+    if [ -f "$BEDROCK_DIR/$file" ] && [ ! -f "$PLAYER_DATA_DIR/$file" ]; then
+        mv "$BEDROCK_DIR/$file" "$PLAYER_DATA_DIR/$file"
+    fi
+    # Create or recreate the symlink in /bedrock
+    ln -sf "$PLAYER_DATA_DIR/$file" "$BEDROCK_DIR/$file"
+done
+
 # Start the Bedrock server
-echo "[+] Running bedrock_server..."
+echo "[+] Starting bedrock_server..."
 cd "$BEDROCK_DIR"
 # Use exec to make the Bedrock server process PID 1
 exec env LD_LIBRARY_PATH="$BEDROCK_DIR" "$BEDROCK_DIR/bedrock_server"
