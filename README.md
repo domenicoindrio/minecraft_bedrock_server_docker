@@ -12,7 +12,6 @@ Client testing was performed using **iOS** and **Android** devices.
     - [Connect to the Remote Machine](#connect-to-the-remote-machine)
     - [Clone the repository](#clone-the-repository)
     - [Create and setup the .env file](#create-and-setup-the-env-file)
-    - [Make the Backup and Restore scripts executable](#make-the-backup-and-restore-scripts-executable)
     - [Start the server with Docker Compose](#start-the-server-with-docker-compose)
 - [Usage](#usage)
     - [.env file](#env-file)
