@@ -23,10 +23,6 @@ services:
       - minecraft_worlds:/bedrock/worlds
       - player_data:/bedrock/player_data
 
-      # Optional bind-mounts for local testing/expansions pack
-      # - ./behavior_packs:/bedrock/behavior_packs:rw
-      # - ./resource_packs:/bedrock/resource_packs:rw
-
     # Keeps a pseudo-TTY open and allows interactive input
     stdin_open: true
     tty: true
