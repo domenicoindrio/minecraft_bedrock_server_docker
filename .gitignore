@@ -1,0 +1,34 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+Thumbs.db
+
+# Docker volumes and temporary files
+*.log
+*.pid
+*.tmp
+
+# Node / Python / other caches 
+node_modules/
+__pycache__/
+
+# Backup folder
+backup/
+
+
+# Bedrock server generated files
+worlds/
+*.db
+*.lock
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files 
+.env

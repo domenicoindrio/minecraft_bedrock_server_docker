@@ -1,0 +1,9 @@
+FROM alpine:latest
+
+WORKDIR /
+
+# Copy script into the image and make executable
+COPY backup.sh /backup.sh
+RUN chmod +x /backup.sh
+
+ENTRYPOINT ["/backup.sh"]

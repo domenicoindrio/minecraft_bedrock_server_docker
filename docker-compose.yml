@@ -1,0 +1,56 @@
+services:
+  mc-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Use an arg from the .env file at build time
+        BEDROCK_VERSION: ${BEDROCK_VERSION}
+    container_name: minecraft-bedrock
+    restart: unless-stopped
+
+    # The .env file will inject all server config values
+    env_file: 
+      - .env
+
+    # UDP ports required for Bedrock Edition
+    ports:
+      - "8888:19132/udp" # (Changed from 19132:19132)
+      - "19133:19133/udp" # Standard IPv6 entry
+
+    # Volumes for worlds data and player data (allowlist.json and permissions.json)
+    volumes:
+      - minecraft_worlds:/bedrock/worlds
+      - player_data:/bedrock/player_data
+
+    # Keeps a pseudo-TTY open and allows interactive input
+    stdin_open: true
+    tty: true
+
+  mc-backup:
+    build:
+      context: .
+      dockerfile: Dockerfile_backup
+    container_name: minecraft_backup
+    volumes:
+      - minecraft_worlds:/bedrock/worlds
+      - minecraft_backups:/backups
+    restart: "no"
+
+  mc-restore:
+    build:
+      context: .
+      dockerfile: Dockerfile_restore
+    container_name: minecraft_restore
+    volumes:
+      - minecraft_worlds:/bedrock/worlds
+      - minecraft_backups:/backups
+    restart: "no"
+
+volumes:
+  minecraft_worlds:
+    name: minecraft_worlds
+  player_data:
+    name: player_data
+  minecraft_backups:
+    name: minecraft_backups
