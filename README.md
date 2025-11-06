@@ -4,6 +4,8 @@ This repository contains the code, configuration files, and all the steps needed
 This setup was tested on a remote machine running **Ubuntu 22.04.5 LTS (GNU/Linux 5.15.0-134-generic x86_64)**.  
 Client testing was performed using **iOS** and **Android** devices.
 
+This repository was created during my training at the *Developer Academy*.
+
 ## Table of Contents
 
 - [Important Caveats](#important-caveats)
